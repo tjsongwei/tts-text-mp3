@@ -1,6 +1,9 @@
 """tkinter メインウィンドウ"""
 
 import os
+import subprocess
+import sys
+import tempfile
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -10,6 +13,7 @@ from core.file_reader import Chapter, load_chapters
 from core.providers import all_providers, get_provider
 from core.providers.base import CancelledError, ProviderError
 from core.tts_engine import (
+    extract_preview_text,
     generate_chapters,
     get_language_codes,
     voices_for_locale,
@@ -196,6 +200,8 @@ class TTSApp:
 
         frm_run = ttk.Frame(self.root)
         frm_run.pack(fill="x", **pad)
+        self.btn_preview = ttk.Button(frm_run, text="音声確認", command=self.on_preview)
+        self.btn_preview.pack(side="left", padx=6)
         self.btn_generate = ttk.Button(frm_run, text="MP3生成 開始", command=self.on_generate)
         self.btn_generate.pack(side="left", padx=6)
         self.btn_cancel = ttk.Button(frm_run, text="キャンセル", command=self.on_cancel, state="disabled")
@@ -341,6 +347,88 @@ class TTSApp:
         if d:
             self.var_outdir.set(d)
 
+    def on_preview(self) -> None:
+        if not self.chapters:
+            messagebox.showwarning("確認", "入力ファイルを選択してください")
+            return
+        if not self.cmb_voice.get():
+            messagebox.showwarning("確認", "ボイスを選択してください")
+            return
+
+        preview_text = extract_preview_text(self.chapters[0].text)
+        if not preview_text:
+            messagebox.showwarning("確認", "音声確認に使用できるテキストがありません")
+            return
+
+        voice = self.cmb_voice.get().split()[0]
+        rate = f"{int(self.var_rate.get()):+d}%"
+        volume = f"{int(self.var_volume.get()):+d}%"
+        pitch = f"{int(self.var_pitch.get()):+d}Hz"
+        try:
+            provider = self._current_provider()
+            provider.validate_credentials()
+        except ProviderError as e:
+            self.on_open_settings()
+            messagebox.showwarning("確認", str(e))
+            return
+
+        self._start_operation("音声確認を生成中...")
+
+        def done(path: str) -> None:
+            def ui() -> None:
+                self._finish()
+                try:
+                    self._play_audio(path)
+                    self.var_status.set("音声確認を再生しています")
+                except OSError as e:
+                    self.var_status.set(f"再生エラー: {e}")
+                    messagebox.showerror("再生エラー", str(e))
+
+            self.root.after(0, ui)
+
+        def failed(err: BaseException, path: str) -> None:
+            def ui() -> None:
+                self._finish()
+                if isinstance(err, CancelledError):
+                    self.var_status.set("音声確認をキャンセルしました")
+                else:
+                    self.var_status.set(f"音声確認エラー: {err}")
+                    messagebox.showerror("音声確認エラー", str(err))
+
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            self.root.after(0, ui)
+
+        def run() -> None:
+            fd, path = tempfile.mkstemp(prefix="tts-text-mp3-preview-", suffix=".mp3")
+            os.close(fd)
+            try:
+                provider.generate_audio(
+                    preview_text,
+                    voice,
+                    path,
+                    rate=rate,
+                    volume=volume,
+                    pitch=pitch,
+                    cancel_event=self.cancel_event,
+                )
+                done(path)
+            except BaseException as e:
+                failed(e, path)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    @staticmethod
+    def _play_audio(path: str) -> None:
+        if os.name == "nt":
+            os.startfile(path)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+
     def on_generate(self) -> None:
         if not self.chapters:
             messagebox.showwarning("確認", "入力ファイルを選択してください")
@@ -350,6 +438,9 @@ class TTSApp:
             return
         voice = self.cmb_voice.get().split()[0]
         out_dir = self.var_outdir.get().strip() or "."
+        rate = f"{int(self.var_rate.get()):+d}%"
+        volume = f"{int(self.var_volume.get()):+d}%"
+        pitch = f"{int(self.var_pitch.get()):+d}Hz"
         try:
             provider = self._current_provider()
             provider.validate_credentials()
@@ -359,10 +450,7 @@ class TTSApp:
             return
 
         config.set_last("last_output_dir", out_dir)
-        self.cancel_event.clear()
-        self.btn_generate.config(state="disabled")
-        self.btn_cancel.config(state="normal")
-        self.progress.start(50)
+        self._start_operation("MP3生成を開始しています...")
 
         def chapter_cb(i: int, total: int, title: str) -> None:
             def ui() -> None:
@@ -396,9 +484,9 @@ class TTSApp:
                     self.chapters,
                     voice,
                     out_dir,
-                    rate=f"{int(self.var_rate.get()):+d}%",
-                    volume=f"{int(self.var_volume.get()):+d}%",
-                    pitch=f"{int(self.var_pitch.get()):+d}Hz",
+                    rate=rate,
+                    volume=volume,
+                    pitch=pitch,
                     chapter_cb=chapter_cb,
                     cancel_event=self.cancel_event,
                 )
@@ -408,8 +496,17 @@ class TTSApp:
 
         threading.Thread(target=run, daemon=True).start()
 
+    def _start_operation(self, status: str) -> None:
+        self.cancel_event.clear()
+        self.btn_preview.config(state="disabled")
+        self.btn_generate.config(state="disabled")
+        self.btn_cancel.config(state="normal")
+        self.progress.start(50)
+        self.var_status.set(status)
+
     def _finish(self) -> None:
         self.progress.stop()
+        self.btn_preview.config(state="normal")
         self.btn_generate.config(state="normal")
         self.btn_cancel.config(state="disabled")
 

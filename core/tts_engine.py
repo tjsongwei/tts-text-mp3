@@ -1,6 +1,7 @@
 """チャプター単位のMP3生成（プロバイダ経由）"""
 
 import os
+import re
 from typing import Callable
 
 from core.file_reader import Chapter, sanitize_filename
@@ -24,6 +25,17 @@ def voices_for_locale(voices: list[dict], locale: str) -> list[dict]:
     if exact:
         return exact
     return [v for v in voices if v["Locale"].startswith(prefix)]
+
+
+def extract_preview_text(text: str, max_chars: int = 150) -> str:
+    """先頭の一文を、最大文字数以内で返す。"""
+    cleaned = text.strip()
+    if not cleaned:
+        return ""
+    sentence_end = re.search(r"[。．.!?！？\n]", cleaned)
+    if sentence_end is not None and sentence_end.end() <= max_chars:
+        return cleaned[: sentence_end.end()].strip()
+    return cleaned[:max_chars].strip()
 
 
 def generate_chapters(
