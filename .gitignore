@@ -19,6 +19,10 @@ client_secret*.json
 
 output/
 outputs/
+build/
+dist/
+release/
+*.spec.bak
 *.mp3
 *.wav
 *.flac
