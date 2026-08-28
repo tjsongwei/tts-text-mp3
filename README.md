@@ -1,85 +1,140 @@
 # TTS Text to MP3
 
-TXTおよびEPUBファイルを読み込み、章ごとのMP3を生成するTkinterアプリです。
-
-## 対応プロバイダ
-
-- Edge TTS
-- Microsoft Azure Speech
-- Google Cloud Text-to-Speech
-- OpenAI TTS
+TXTまたはEPUBファイルを読み込み、文章を章ごとのMP3音声へ変換するデスクトップアプリです。WindowsとmacOSに対応しています。
 
 ## 主な機能
 
 - TXT / EPUBからのテキスト抽出
 - EPUBの章ごとのMP3出力
 - 言語・ボイスの選択
-- ファイル先頭の一文を使ったボイスの音声確認
+- ファイル先頭の一文を使った音声確認
 - 読み上げ速度、音量、ピッチの調整
 - 長文の自動分割
 - バックグラウンド生成とキャンセル
 
-## セットアップ
+## 対応プロバイダ
+
+| プロバイダ | 認証情報 |
+| --- | --- |
+| Edge TTS | 不要 |
+| Microsoft Azure Speech | APIキーとリージョンが必要 |
+| Google Cloud Text-to-Speech | APIキーまたはサービスアカウントJSONが必要 |
+| OpenAI TTS | APIキーが必要 |
+
+## ダウンロード
+
+[最新のGitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest)から、お使いのOSに合ったファイルをダウンロードしてください。
+
+### Windows
+
+| ファイル | 用途 |
+| --- | --- |
+| `TTS-Text-MP3_Setup_<version>.exe` | 通常のインストール版。スタートメニューへの登録とアンインストールに対応 |
+| `TTS-Text-MP3_Windows_Portable_<version>.zip` | インストール不要版。ZIPを展開して `TTS-Text-MP3.exe` を実行 |
+
+通常はSetup版がおすすめです。Portable版を使う場合は、ZIP内から直接起動せず、最初に任意のフォルダへすべて展開してください。
+
+### macOS
+
+Macの種類に合ったDMGまたはZIPを選んでください。
+
+| ファイル名に含まれる表記 | 対象Mac |
+| --- | --- |
+| `arm64` | Apple Silicon搭載Mac（M1、M2、M3、M4以降） |
+| `x86_64` | Intel搭載Mac |
+
+- DMG：開いてアプリを利用する配布形式
+- ZIP：展開して `.app` を利用する形式
+
+現在のmacOS版はAppleによるコード署名・公証を行っていません。初回起動時にmacOSの警告が表示された場合は、FinderでアプリをControlキーを押しながらクリックし、「開く」を選択してください。
+
+## 基本的な使い方
+
+1. 使用するTTSプロバイダを選択します。
+2. 必要な場合は「設定...」から認証情報を入力します。
+3. TXTまたはEPUBファイルを選択します。
+4. 出力フォルダ、言語、ボイス、速度などを設定します。
+5. 必要に応じて「音声確認」を実行します。
+6. 「MP3生成 開始」を押します。
+
+Edge TTSは認証情報なしですぐに使用できます。
+
+## 認証情報と設定ファイル
+
+Azure、Google、OpenAIの認証情報はGUIの「設定...」から入力します。設定は次の場所に平文で保存されます。
+
+- Windows：`%USERPROFILE%\.tts-text-mp3\config.json`
+- macOS：`~/.tts-text-mp3/config.json`
+
+APIキー、`config.json`、GoogleのサービスアカウントJSONをGitへコミットしたり、他人と共有したりしないでください。これらの認証情報は配布ファイルやGitHub Releaseには含まれていません。
+
+## ソースコードから実行する
 
 Python 3.10以降を使用してください。
 
+### Windows
+
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-## 起動
-
-```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 python main.py
 ```
 
-## 認証情報
+### macOS
 
-Azure、Google、OpenAIの認証情報はGUIの「設定...」から入力します。Windowsでは次のファイルに平文で保存されます。
-
-```text
-%USERPROFILE%\.tts-text-mp3\config.json
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python main.py
 ```
 
-このファイルやサービスアカウントJSONをGitへコミットしないでください。macOSでは同じ `~/.tts-text-mp3/config.json`（ホームフォルダ配下）に保存されます。
+## 配布ファイルをローカルでビルドする
 
-Edge TTSは認証情報なしで利用できます。
+### Windows
 
-## Windows / macOS向けリリース
-
-PyInstallerで、Windowsは `onedir` 形式、macOSは `.app` を作成します。WindowsではInno SetupによるインストーラーとPortable ZIP、macOSではDMGとZIPを生成できます。SDKの認証情報やユーザー設定はアプリに同梱せず、実行時に各ユーザーのホームフォルダへ保存されます。
-
-アプリ内容に合わせたアイコン（テキスト文書、音声波形、音符）を `assets/app-icon.png` と `assets/app-icon.ico` に収録し、Windowsの実行ファイルへ適用しています。
-
-### ローカルビルド
-
-Windows（PowerShell、Inno Setup 6が必要）:
+PowerShell、PyInstaller、Inno Setup 6が必要です。
 
 ```powershell
 python -m pip install -r requirements.txt pyinstaller
 .\scripts\build_windows.ps1 -Version "dev"
 ```
 
-`release/` に `Setup.exe` とPortable ZIPが出力されます。
+`release/` にSetup.exeとPortable ZIPが作成されます。
 
-macOS（macOS上で実行、PyInstallerのインストールが必要）:
+### macOS
+
+macOS上で実行してください。
 
 ```bash
 python -m pip install -r requirements.txt pyinstaller
 bash scripts/build_macos.sh dev
 ```
 
-`release/` に `.app` のZIPとDMGが出力されます。macOSは基本的に実行するMacのアーキテクチャ（IntelまたはApple Silicon）向けにビルドしてください。GitHub Actionsでは両方を別々にビルドします。署名・公証はまだ設定していないため、配布時にmacOSのセキュリティ確認が表示される場合があります。
+実行したMacのアーキテクチャ向けに、`.app`のZIPとDMGが `release/` に作成されます。
 
-### GitHub Release
+## GitHub Releaseを作成する
 
-`v` で始まるタグをpushすると、`.github/workflows/release.yml` がWindows、macOS Intel、macOS Apple Siliconをそれぞれビルドし、GitHub Releaseへ自動添付します。
+`v`で始まるタグをpushすると、GitHub Actionsが以下を自動的にビルドしてReleaseへ添付します。
+
+- Windows Setup版
+- Windows Portable版
+- macOS Apple Silicon版（DMG / ZIP）
+- macOS Intel版（DMG / ZIP）
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-Privateリポジトリでも、Actionsの `GITHUB_TOKEN` に必要な `contents: write` 権限だけを付与して動作します。APIキー、サービスアカウントJSON、`config.json` はリポジトリやReleaseへ含めないでください。
+ワークフローは `.github/workflows/release.yml` にあります。認証情報は登録せず、Release作成にはGitHub Actions標準の `GITHUB_TOKEN` と `contents: write` 権限だけを使用します。
+
+## 現在の制限事項
+
+- macOS版は未署名・未公証です。
+- Windows版もコード署名していないため、環境によってはSmartScreenの警告が表示される場合があります。
+- TTSプロバイダの利用料金、文字数制限、地域制限は各サービスの条件に従います。
+- macOS版のアプリアイコンは現在未設定です。
