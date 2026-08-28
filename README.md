@@ -138,3 +138,9 @@ git push origin v0.2.0
 - Windows版もコード署名していないため、環境によってはSmartScreenの警告が表示される場合があります。
 - TTSプロバイダの利用料金、文字数制限、地域制限は各サービスの条件に従います。
 - macOS版のアプリアイコンは現在未設定です。
+
+## ライセンス
+
+このプロジェクトは [MIT License](LICENSE) のもとで公開されています。
+
+Copyright (c) 2026 YuluEthan
