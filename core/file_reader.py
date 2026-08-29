@@ -98,3 +98,32 @@ def load_chapters(path: str) -> list[Chapter]:
     if not chapters:
         raise ValueError(f"テキストが見つかりませんでした: {path}")
     return chapters
+
+
+def split_chapters_by_chars(chapters: list[Chapter], max_chars: int) -> list[Chapter]:
+    """チャプター本文を文書順に連結し、指定文字数以内の部分に分割する。"""
+    if not isinstance(max_chars, int) or isinstance(max_chars, bool) or max_chars <= 0:
+        raise ValueError("文字数は1以上の整数で指定してください")
+
+    full_text = "\n".join(chapter.text for chapter in chapters if chapter.text)
+    if not full_text.strip():
+        return []
+
+    parts: list[Chapter] = []
+    offset = 0
+    while offset < len(full_text):
+        remaining = len(full_text) - offset
+        if remaining <= max_chars:
+            end = len(full_text)
+        else:
+            window = full_text[offset : offset + max_chars]
+            boundaries = list(re.finditer(r"[。．.!?！？\n]", window))
+            end = offset + (boundaries[-1].end() if boundaries else max_chars)
+
+        text = full_text[offset:end]
+        if text.strip():
+            index = len(parts) + 1
+            parts.append(Chapter(index=index, title=f"Part {index:03d}", text=text))
+        offset = end
+
+    return parts

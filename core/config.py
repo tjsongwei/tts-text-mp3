@@ -6,7 +6,13 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".tts-text-mp3"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-_DEFAULTS: dict = {"providers": {}, "last_provider": "edge", "last_output_dir": ""}
+_DEFAULTS: dict = {
+    "providers": {},
+    "last_provider": "edge",
+    "last_output_dir": "",
+    "last_split_mode": "chapter",
+    "last_split_chars": 5000,
+}
 
 
 def _load() -> dict:

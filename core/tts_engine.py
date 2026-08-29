@@ -28,14 +28,17 @@ def voices_for_locale(voices: list[dict], locale: str) -> list[dict]:
 
 
 def extract_preview_text(text: str, max_chars: int = 150) -> str:
-    """先頭の一文を、最大文字数以内で返す。"""
+    """先頭から約max_chars文字を、できるだけ文末で区切って返す。"""
     cleaned = text.strip()
     if not cleaned:
         return ""
-    sentence_end = re.search(r"[。．.!?！？\n]", cleaned)
-    if sentence_end is not None and sentence_end.end() <= max_chars:
-        return cleaned[: sentence_end.end()].strip()
-    return cleaned[:max_chars].strip()
+    if max_chars <= 0:
+        return ""
+    window = cleaned[:max_chars]
+    sentence_ends = list(re.finditer(r"[。．.!?！？\n]", window))
+    if sentence_ends and sentence_ends[-1].end() >= max_chars * 0.6:
+        return window[: sentence_ends[-1].end()].strip()
+    return window.strip()
 
 
 def generate_chapters(

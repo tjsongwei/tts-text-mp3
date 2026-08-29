@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from core import config
-from core.file_reader import Chapter, load_chapters
+from core.file_reader import Chapter, load_chapters, split_chapters_by_chars
 from core.providers import all_providers, get_provider
 from core.providers.base import CancelledError, ProviderError
 from core.tts_engine import (
@@ -87,7 +87,7 @@ class TTSApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("TTS Text → MP3")
-        self.root.geometry("780x680")
+        self.root.geometry("780x740")
 
         self.chapters: list[Chapter] = []
         self.voices: list[dict] = []
@@ -150,6 +150,40 @@ class TTSApp:
             side="left", padx=(0, 6), pady=6
         )
 
+        frm_split = ttk.LabelFrame(self.root, text="MP3の分割方法")
+        frm_split.pack(fill="x", **pad)
+        saved_mode = config.get_last("last_split_mode")
+        if saved_mode not in ("chapter", "chars"):
+            saved_mode = "chapter"
+        saved_chars = config.get_last("last_split_chars")
+        if not isinstance(saved_chars, int) or isinstance(saved_chars, bool) or saved_chars <= 0:
+            saved_chars = 5000
+        self.var_split_mode = tk.StringVar(value=saved_mode)
+        self.var_split_chars = tk.StringVar(value=str(saved_chars))
+        ttk.Radiobutton(
+            frm_split,
+            text="章ごと",
+            variable=self.var_split_mode,
+            value="chapter",
+            command=self._on_split_settings_changed,
+        ).pack(side="left", padx=(6, 12), pady=6)
+        ttk.Radiobutton(
+            frm_split,
+            text="文字数ごと",
+            variable=self.var_split_mode,
+            value="chars",
+            command=self._on_split_settings_changed,
+        ).pack(side="left", padx=(0, 6), pady=6)
+        self.entry_split_chars = ttk.Entry(
+            frm_split, textvariable=self.var_split_chars, width=10
+        )
+        self.entry_split_chars.pack(side="left", padx=(0, 4), pady=6)
+        ttk.Label(frm_split, text="文字以内 / 1ファイル").pack(side="left", pady=6)
+        self.entry_split_chars.bind("<KeyRelease>", lambda _e: self._on_split_settings_changed())
+        self.entry_split_chars.bind("<FocusOut>", lambda _e: self._on_split_settings_changed())
+        self.entry_split_chars.bind("<Return>", lambda _e: self._on_split_settings_changed())
+        self._update_split_entry_state()
+
         frm_voice = ttk.LabelFrame(self.root, text="音声設定")
         frm_voice.pack(fill="x", **pad)
 
@@ -184,7 +218,7 @@ class TTSApp:
             )
         frm_voice.columnconfigure(3, weight=1)
 
-        frm_ch = ttk.LabelFrame(self.root, text="チャプター")
+        frm_ch = ttk.LabelFrame(self.root, text="出力単位")
         frm_ch.pack(fill="both", expand=True, **pad)
         self.tree = ttk.Treeview(frm_ch, columns=("no", "title", "chars"), show="headings", height=7)
         self.tree.heading("no", text="#")
@@ -319,6 +353,58 @@ class TTSApp:
         if display:
             self.cmb_voice.current(0)
 
+    def _parse_split_chars(self, *, show_warning: bool = False) -> int | None:
+        try:
+            value = int(self.var_split_chars.get().strip())
+            if value <= 0:
+                raise ValueError
+        except ValueError:
+            if show_warning:
+                messagebox.showwarning("確認", "文字数は1以上の整数で入力してください")
+            return None
+        return value
+
+    def _output_chapters(self, *, show_warning: bool = False) -> list[Chapter] | None:
+        if self.var_split_mode.get() == "chapter":
+            return self.chapters
+        max_chars = self._parse_split_chars(show_warning=show_warning)
+        if max_chars is None:
+            return None
+        return split_chapters_by_chars(self.chapters, max_chars)
+
+    def _update_split_entry_state(self) -> None:
+        state = "normal" if self.var_split_mode.get() == "chars" else "disabled"
+        self.entry_split_chars.config(state=state)
+
+    def _on_split_settings_changed(self) -> None:
+        self._update_split_entry_state()
+        mode = self.var_split_mode.get()
+        config.set_last("last_split_mode", mode)
+        max_chars = self._parse_split_chars()
+        if max_chars is not None:
+            config.set_last("last_split_chars", max_chars)
+        self._refresh_output_list()
+
+    def _refresh_output_list(self) -> None:
+        self.tree.delete(*self.tree.get_children())
+        output_chapters = self._output_chapters()
+        if output_chapters is None:
+            self.var_status.set("文字数は1以上の整数で入力してください")
+            return
+        for ch in output_chapters:
+            self.tree.insert("", "end", values=(ch.index, ch.title, len(ch.text)))
+        if not self.chapters:
+            return
+        total_chars = (
+            sum(len(c.text) for c in self.chapters)
+            if self.var_split_mode.get() == "chapter"
+            else sum(len(c.text) for c in output_chapters)
+        )
+        unit_label = "チャプター" if self.var_split_mode.get() == "chapter" else "ファイル"
+        self.var_status.set(
+            f"{len(output_chapters)} {unit_label} / 合計 {total_chars:,} 文字"
+        )
+
     def on_browse_file(self) -> None:
         path = filedialog.askopenfilename(
             filetypes=[
@@ -336,11 +422,7 @@ class TTSApp:
             return
         self.chapters = chapters
         self.var_filepath.set(path)
-        self.tree.delete(*self.tree.get_children())
-        for ch in chapters:
-            self.tree.insert("", "end", values=(ch.index, ch.title, len(ch.text)))
-        total_chars = sum(len(c.text) for c in chapters)
-        self.var_status.set(f"{len(chapters)} チャプター / 合計 {total_chars:,} 文字")
+        self._refresh_output_list()
 
     def on_browse_outdir(self) -> None:
         d = filedialog.askdirectory()
@@ -355,13 +437,25 @@ class TTSApp:
             messagebox.showwarning("確認", "ボイスを選択してください")
             return
 
-        preview_text = extract_preview_text(self.chapters[0].text)
+        output_chapters = self._output_chapters(show_warning=True)
+        if not output_chapters:
+            return
+        selected = self.tree.selection()
+        selected_index = self.tree.index(selected[0]) if selected else 0
+        if selected_index >= len(output_chapters):
+            selected_index = 0
+        rate_value = int(self.var_rate.get())
+        preview_chars = max(1, int(75 * (1 + rate_value / 100)))
+        preview_text = extract_preview_text(
+            output_chapters[selected_index].text,
+            max_chars=preview_chars,
+        )
         if not preview_text:
             messagebox.showwarning("確認", "音声確認に使用できるテキストがありません")
             return
 
         voice = self.cmb_voice.get().split()[0]
-        rate = f"{int(self.var_rate.get()):+d}%"
+        rate = f"{rate_value:+d}%"
         volume = f"{int(self.var_volume.get()):+d}%"
         pitch = f"{int(self.var_pitch.get()):+d}Hz"
         try:
@@ -436,6 +530,9 @@ class TTSApp:
         if not self.cmb_voice.get():
             messagebox.showwarning("確認", "ボイスを選択してください")
             return
+        output_chapters = self._output_chapters(show_warning=True)
+        if not output_chapters:
+            return
         voice = self.cmb_voice.get().split()[0]
         out_dir = self.var_outdir.get().strip() or "."
         rate = f"{int(self.var_rate.get()):+d}%"
@@ -450,6 +547,9 @@ class TTSApp:
             return
 
         config.set_last("last_output_dir", out_dir)
+        config.set_last("last_split_mode", self.var_split_mode.get())
+        if self.var_split_mode.get() == "chars":
+            config.set_last("last_split_chars", self._parse_split_chars())
         self._start_operation("MP3生成を開始しています...")
 
         def chapter_cb(i: int, total: int, title: str) -> None:
@@ -481,7 +581,7 @@ class TTSApp:
             try:
                 outputs = generate_chapters(
                     provider,
-                    self.chapters,
+                    output_chapters,
                     voice,
                     out_dir,
                     rate=rate,
