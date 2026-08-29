@@ -4,6 +4,7 @@ import re
 from xml.sax.saxutils import escape
 
 import requests
+from i18n import t
 
 from core.config import get_provider_credentials
 from core.providers.base import (
@@ -23,8 +24,8 @@ class AzureTTSProvider(TTSProvider):
 
     def requires_credentials(self) -> dict[str, str]:
         return {
-            "key": "Speechリソースの KEY 1 / KEY 2（サブスクリプションIDではありません）",
-            "region": "Speechリソースのリージョン（例: japaneast）",
+            "key": t("provider.azure.key"),
+            "region": t("provider.azure.region"),
         }
 
     def _credentials(self) -> tuple[str, str]:
@@ -32,9 +33,7 @@ class AzureTTSProvider(TTSProvider):
         key = creds.get("key", "").strip()
         region = creds.get("region", "").strip()
         if not key or not region:
-            raise ProviderError(
-                "Azureの認証情報が未設定です（設定ダイアログでキーとリージョンを入力してください）"
-            )
+            raise ProviderError(t("provider.azure.credentials"))
         return key, region
 
     def validate_credentials(self) -> None:
@@ -47,7 +46,7 @@ class AzureTTSProvider(TTSProvider):
             resp = requests.get(url, headers={"Ocp-Apim-Subscription-Key": key}, timeout=15)
             resp.raise_for_status()
         except requests.RequestException as e:
-            raise ProviderError(f"Azureボイス一覧の取得に失敗: {e}") from e
+            raise ProviderError(t("provider.voice_list_error", provider="Azure", error=e)) from e
         return [
             {
                 "ShortName": v["ShortName"],
@@ -96,9 +95,9 @@ class AzureTTSProvider(TTSProvider):
                         next_report = written + PROGRESS_INTERVAL
                 elif result.reason == speechsdk.ResultReason.Canceled:
                     details = result.cancellation_details
-                    raise ProviderError(f"Azure TTSがキャンセルされました: {details.error_details}")
+                    raise ProviderError(t("provider.operation_error", provider="Azure TTS", error=details.error_details))
                 else:
-                    raise ProviderError(f"Azure TTSでエラー: {result.reason}")
+                    raise ProviderError(t("provider.operation_error", provider="Azure TTS", error=result.reason))
         if progress_cb is not None:
             progress_cb(written)
 

@@ -1,5 +1,6 @@
 """TTSプロバイダのファクトリ"""
 
+from i18n import t
 from core.providers.base import CancelledError, ProviderError, TTSProvider  # noqa: F401
 
 _PROVIDER_CLASSES: dict[str, str] = {
@@ -13,7 +14,7 @@ _PROVIDER_CLASSES: dict[str, str] = {
 def get_provider(name: str) -> TTSProvider:
     dotted = _PROVIDER_CLASSES.get(name)
     if dotted is None:
-        raise ProviderError(f"不明なプロバイダ: {name}")
+        raise ProviderError(t("error.unknown_provider", name=name))
     module_path, class_name = dotted.rsplit(".", 1)
     import importlib
 

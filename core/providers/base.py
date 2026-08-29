@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable
 
+from i18n import t
+
 
 class ProviderError(Exception):
     pass
@@ -17,20 +19,20 @@ class CancelledError(Exception):
 def parse_percent(value: str) -> int:
     m = re.fullmatch(r"([+-]?\d+)\s*%", value.strip())
     if not m:
-        raise ValueError(f"無効なパーセント指定: {value}")
+        raise ValueError(t("error.invalid_percent", value=value))
     return int(m.group(1))
 
 
 def parse_hz(value: str) -> int:
     m = re.fullmatch(r"([+-]?\d+)\s*Hz", value.strip())
     if not m:
-        raise ValueError(f"無効なHz指定: {value}")
+        raise ValueError(t("error.invalid_hz", value=value))
     return int(m.group(1))
 
 
 def check_cancel(cancel_event) -> None:
     if cancel_event is not None and cancel_event.is_set():
-        raise CancelledError("キャンセルされました")
+        raise CancelledError(t("error.cancelled"))
 
 
 def split_text_by_bytes(text: str, max_bytes: int, min_break: int = 200) -> list[str]:

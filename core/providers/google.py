@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
+from i18n import t
 from core.config import get_provider_credentials
 from core.providers.base import (
     PROGRESS_INTERVAL,
@@ -31,8 +32,8 @@ class GoogleTTSProvider(TTSProvider):
 
     def optional_credentials(self) -> dict[str, str]:
         return {
-            "api_key": "APIキー（サービスアカウントJSONキーの代わりに使用可）",
-            "credentials_json": "サービスアカウントJSONキーのパス（client_secret_*.jsonは不可）",
+            "api_key": t("provider.google.api_key"),
+            "credentials_json": t("provider.google.credentials_json"),
         }
 
     def _client(self):
@@ -43,16 +44,14 @@ class GoogleTTSProvider(TTSProvider):
         api_key = creds.get("api_key", "").strip()
         cred_path = creds.get("credentials_json", "").strip()
         if not api_key and not cred_path:
-            raise ProviderError(
-                "Google Cloudの認証情報が未設定です（設定ダイアログで入力してください）"
-            )
+            raise ProviderError(t("provider.google.credentials"))
         if api_key:
             return texttospeech.TextToSpeechClient(
                 client_options=ClientOptions(api_key=api_key)
             )
         path = Path(cred_path)
         if not path.is_file():
-            raise ProviderError(f"認証JSONファイルが見つかりません: {path}")
+            raise ProviderError(t("provider.google.key_not_found", path=path))
         self._validate_key_file(path)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(path)
         return texttospeech.TextToSpeechClient()
@@ -63,22 +62,12 @@ class GoogleTTSProvider(TTSProvider):
             with open(path, encoding="utf-8-sig") as f:
                 data = json.load(f)
         except (OSError, json.JSONDecodeError) as e:
-            raise ProviderError(f"認証JSONを読み込めません: {e}") from e
+            raise ProviderError(t("provider.google.key_unreadable", error=e)) from e
         file_type = data.get("type") if isinstance(data, dict) else None
         if "installed" in data or "web" in data:
-            raise ProviderError(
-                f"このファイルはOAuthクライアントシークレットです（{path.name}）。\n"
-                "サービスアカウントのJSONキーが必要です:\n"
-                "GCPコンソール → IAMと管理 → サービス アカウント → 作成 → "
-                "「Cloud Text-to-Speech ユーザー」ロールを付与 → "
-                "キー → 鍵を追加 → JSON でダウンロードしてください。"
-                "または設定ダイアログでAPIキーを入力してください。"
-            )
+            raise ProviderError(t("provider.google.oauth_file", name=path.name))
         if file_type != "service_account":
-            raise ProviderError(
-                f"認証JSONの形式が不正です（type={file_type}）。"
-                "サービスアカウントのJSONキーまたはAPIキーを指定してください。"
-            )
+            raise ProviderError(t("provider.google.invalid_key", type=file_type))
 
     def validate_credentials(self) -> None:
         self._client()
@@ -89,25 +78,13 @@ class GoogleTTSProvider(TTSProvider):
         if "has not been used in project" in msg or (
             "is disabled" in msg and "texttospeech" in msg.lower()
         ):
-            return ProviderError(
-                "Cloud Text-to-Speech APIが有効化されていません。\n"
-                "GCPコンソールでAPIを有効にしてから再試行してください:\n"
-                "APIとサービス → ライブラリ → 「Cloud Text-to-Speech API」→ 有効にする\n"
-                f"詳細: {e}"
-            )
+            return ProviderError(t("provider.google.api_disabled", error=e))
         if "PERMISSION_DENIED" in msg or "403" in msg:
-            return ProviderError(
-                "アクセスが拒否されました。サービスアカウントに"
-                "「Cloud Text-to-Speech ユーザー」ロールが付与されているか確認してください。\n"
-                f"詳細: {e}"
-            )
+            return ProviderError(t("provider.google.permission", error=e))
         if "UNAUTHENTICATED" in msg or "invalid_grant" in msg:
-            return ProviderError(
-                "認証に失敗しました。JSONキーが無効または失効している可能性があります。\n"
-                f"詳細: {e}"
-            )
+            return ProviderError(t("provider.google.unauthenticated", error=e))
         if "QUOTA" in msg.upper() or "RESOURCE_EXHAUSTED" in msg:
-            return ProviderError(f"利用制限（クォータ）に達しました。\n詳細: {e}")
+            return ProviderError(t("provider.google.quota", error=e))
         return None
 
     @staticmethod
@@ -159,7 +136,7 @@ class GoogleTTSProvider(TTSProvider):
                 translated = self._translate_error(e)
                 if translated is not None:
                     raise translated from e
-                raise ProviderError(f"Googleボイス一覧の取得に失敗: {e}") from e
+                raise ProviderError(t("provider.voice_list_error", provider="Google", error=e)) from e
         gender_map = {
             texttospeech.SsmlVoiceGender.FEMALE: "Female",
             texttospeech.SsmlVoiceGender.MALE: "Male",
@@ -236,7 +213,7 @@ class GoogleTTSProvider(TTSProvider):
                     translated = self._translate_error(e)
                     if translated is not None:
                         raise translated from e
-                    raise ProviderError(f"Google TTSでエラー: {e}") from e
+                    raise ProviderError(t("provider.operation_error", provider="Google TTS", error=e)) from e
                 data = response.audio_content
                 audio.write(data)
                 written += len(data)

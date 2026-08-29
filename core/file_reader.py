@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 
 import chardet
+from i18n import t
 
 
 @dataclass
@@ -94,16 +95,16 @@ def load_chapters(path: str) -> list[Chapter]:
     elif lower.endswith(".txt"):
         chapters = read_text_file(path)
     else:
-        raise ValueError(f"未対応のファイル形式です: {path}")
+        raise ValueError(t("error.unsupported_file", path=path))
     if not chapters:
-        raise ValueError(f"テキストが見つかりませんでした: {path}")
+        raise ValueError(t("error.no_text", path=path))
     return chapters
 
 
 def split_chapters_by_chars(chapters: list[Chapter], max_chars: int) -> list[Chapter]:
     """チャプター本文を文書順に連結し、指定文字数以内の部分に分割する。"""
     if not isinstance(max_chars, int) or isinstance(max_chars, bool) or max_chars <= 0:
-        raise ValueError("文字数は1以上の整数で指定してください")
+        raise ValueError(t("error.invalid_chars"))
 
     full_text = "\n".join(chapter.text for chapter in chapters if chapter.text)
     if not full_text.strip():

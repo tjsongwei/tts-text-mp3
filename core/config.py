@@ -12,6 +12,7 @@ _DEFAULTS: dict = {
     "last_output_dir": "",
     "last_split_mode": "chapter",
     "last_split_chars": 5000,
+    "ui_language": "",
 }
 
 

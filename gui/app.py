@@ -8,6 +8,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from i18n import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, set_language, t
 from core import config
 from core.file_reader import Chapter, load_chapters, split_chapters_by_chars
 from core.providers import all_providers, get_provider
@@ -25,7 +26,7 @@ class SettingsDialog(tk.Toplevel):
         super().__init__(master)
         self.provider = provider
         self.on_saved = on_saved
-        self.title(f"{provider.label} の設定")
+        self.title(t("provider.settings_title", provider=provider.label))
         self.resizable(False, False)
         self.grab_set()
 
@@ -50,7 +51,7 @@ class SettingsDialog(tk.Toplevel):
             if "path" in field or "json" in field or "file" in field:
                 ttk.Button(
                     frm,
-                    text="参照...",
+                    text=t("browse"),
                     command=lambda v=var: self._browse(v),
                 ).grid(row=entry_row, column=1, padx=(4, 0), pady=(0, 8))
         frm.columnconfigure(0, weight=1)
@@ -59,14 +60,14 @@ class SettingsDialog(tk.Toplevel):
         btns.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Label(
             btns,
-            text="※ APIキーは平文でconfig.jsonに保存されます",
+            text=t("provider.credentials_note"),
             foreground="#888",
         ).pack(side="left")
-        ttk.Button(btns, text="保存", command=self._save).pack(side="right", padx=4)
-        ttk.Button(btns, text="キャンセル", command=self.destroy).pack(side="right")
+        ttk.Button(btns, text=t("button.save"), command=self._save).pack(side="right", padx=4)
+        ttk.Button(btns, text=t("button.cancel"), command=self.destroy).pack(side="right")
 
     def _browse(self, var: tk.StringVar) -> None:
-        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json"), ("全ファイル", "*.*")])
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json"), (t("file.all"), "*.*")])
         if path:
             var.set(path)
 
@@ -75,7 +76,7 @@ class SettingsDialog(tk.Toplevel):
         required = self.provider.requires_credentials()
         missing = [f for f in required if not values.get(f)]
         if missing:
-            messagebox.showwarning("確認", "必須項目を入力してください", parent=self)
+            messagebox.showwarning(t("dialog.confirm"), t("provider.credentials_required"), parent=self)
             return
         config.set_provider_credentials(self.provider.name, values)
         if self.on_saved is not None:
@@ -86,8 +87,9 @@ class SettingsDialog(tk.Toplevel):
 class TTSApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("TTS Text → MP3")
-        self.root.geometry("780x740")
+        set_language(config.get_last("ui_language"))
+        self.root.title(t("app.title"))
+        self.root.geometry("780x780")
 
         self.chapters: list[Chapter] = []
         self.voices: list[dict] = []
@@ -108,7 +110,21 @@ class TTSApp:
     def _build_widgets(self) -> None:
         pad = {"padx": 8, "pady": 4}
 
-        frm_prov = ttk.LabelFrame(self.root, text="プロバイダ")
+        frm_language = ttk.Frame(self.root)
+        frm_language.pack(fill="x", padx=8, pady=(6, 0))
+        ttk.Label(frm_language, text=t("language.label")).pack(side="left", padx=(6, 4))
+        self.var_ui_language = tk.StringVar(value=LANGUAGE_NAMES[set_language(config.get_last("ui_language"))])
+        self.cmb_ui_language = ttk.Combobox(
+            frm_language,
+            state="readonly",
+            width=14,
+            values=[LANGUAGE_NAMES[language] for language in SUPPORTED_LANGUAGES],
+            textvariable=self.var_ui_language,
+        )
+        self.cmb_ui_language.pack(side="left")
+        self.cmb_ui_language.bind("<<ComboboxSelected>>", self._on_ui_language_changed)
+
+        frm_prov = ttk.LabelFrame(self.root, text=t("provider.group"))
         frm_prov.pack(fill="x", **pad)
         self.var_provider = tk.StringVar()
         providers = all_providers()
@@ -123,21 +139,21 @@ class TTSApp:
         )
         self.cmb_provider.pack(side="left", padx=6, pady=6)
         self.cmb_provider.bind("<<ComboboxSelected>>", lambda _e: self._on_provider_changed())
-        ttk.Button(frm_prov, text="設定...", command=self.on_open_settings).pack(
+        ttk.Button(frm_prov, text=t("provider.settings"), command=self.on_open_settings).pack(
             side="left", padx=6, pady=6
         )
 
-        frm_file = ttk.LabelFrame(self.root, text="入力ファイル")
+        frm_file = ttk.LabelFrame(self.root, text=t("input.group"))
         frm_file.pack(fill="x", **pad)
         self.var_filepath = tk.StringVar()
         ttk.Entry(frm_file, textvariable=self.var_filepath, state="readonly").pack(
             side="left", fill="x", expand=True, padx=6, pady=6
         )
-        ttk.Button(frm_file, text="参照...", command=self.on_browse_file).pack(
+        ttk.Button(frm_file, text=t("browse"), command=self.on_browse_file).pack(
             side="left", padx=(0, 6), pady=6
         )
 
-        frm_out = ttk.LabelFrame(self.root, text="出力フォルダ")
+        frm_out = ttk.LabelFrame(self.root, text=t("output.group"))
         frm_out.pack(fill="x", **pad)
         default_out = config.get_last("last_output_dir") or os.path.join(
             os.path.expanduser("~"), "Documents", "tts-mp3"
@@ -146,11 +162,11 @@ class TTSApp:
         ttk.Entry(frm_out, textvariable=self.var_outdir).pack(
             side="left", fill="x", expand=True, padx=6, pady=6
         )
-        ttk.Button(frm_out, text="参照...", command=self.on_browse_outdir).pack(
+        ttk.Button(frm_out, text=t("browse"), command=self.on_browse_outdir).pack(
             side="left", padx=(0, 6), pady=6
         )
 
-        frm_split = ttk.LabelFrame(self.root, text="MP3の分割方法")
+        frm_split = ttk.LabelFrame(self.root, text=t("split.group"))
         frm_split.pack(fill="x", **pad)
         saved_mode = config.get_last("last_split_mode")
         if saved_mode not in ("chapter", "chars"):
@@ -162,14 +178,14 @@ class TTSApp:
         self.var_split_chars = tk.StringVar(value=str(saved_chars))
         ttk.Radiobutton(
             frm_split,
-            text="章ごと",
+            text=t("split.chapter"),
             variable=self.var_split_mode,
             value="chapter",
             command=self._on_split_settings_changed,
         ).pack(side="left", padx=(6, 12), pady=6)
         ttk.Radiobutton(
             frm_split,
-            text="文字数ごと",
+            text=t("split.chars"),
             variable=self.var_split_mode,
             value="chars",
             command=self._on_split_settings_changed,
@@ -178,21 +194,21 @@ class TTSApp:
             frm_split, textvariable=self.var_split_chars, width=10
         )
         self.entry_split_chars.pack(side="left", padx=(0, 4), pady=6)
-        ttk.Label(frm_split, text="文字以内 / 1ファイル").pack(side="left", pady=6)
+        ttk.Label(frm_split, text=t("split.chars_suffix")).pack(side="left", pady=6)
         self.entry_split_chars.bind("<KeyRelease>", lambda _e: self._on_split_settings_changed())
         self.entry_split_chars.bind("<FocusOut>", lambda _e: self._on_split_settings_changed())
         self.entry_split_chars.bind("<Return>", lambda _e: self._on_split_settings_changed())
         self._update_split_entry_state()
 
-        frm_voice = ttk.LabelFrame(self.root, text="音声設定")
+        frm_voice = ttk.LabelFrame(self.root, text=t("audio.group"))
         frm_voice.pack(fill="x", **pad)
 
-        ttk.Label(frm_voice, text="言語:").grid(row=0, column=0, padx=6, pady=6, sticky="e")
+        ttk.Label(frm_voice, text=t("audio.language")).grid(row=0, column=0, padx=6, pady=6, sticky="e")
         self.cmb_lang = ttk.Combobox(frm_voice, state="readonly", width=14)
         self.cmb_lang.grid(row=0, column=1, padx=(0, 12), pady=6, sticky="w")
         self.cmb_lang.bind("<<ComboboxSelected>>", lambda _e: self._update_voice_list())
 
-        ttk.Label(frm_voice, text="ボイス:").grid(row=0, column=2, padx=6, pady=6, sticky="e")
+        ttk.Label(frm_voice, text=t("audio.voice")).grid(row=0, column=2, padx=6, pady=6, sticky="e")
         self.cmb_voice = ttk.Combobox(frm_voice, state="readonly", width=32)
         self.cmb_voice.grid(row=0, column=3, padx=(0, 12), pady=6, sticky="w")
 
@@ -201,9 +217,9 @@ class TTSApp:
         self.var_pitch = tk.DoubleVar(value=0)
         for row, (label, var, lo, hi, suffix) in enumerate(
             [
-                ("速度 (%)", self.var_rate, -50, 50, "%"),
-                ("音量 (%)", self.var_volume, -50, 50, "%"),
-                ("ピッチ (Hz)", self.var_pitch, -50, 50, "Hz"),
+                (t("audio.rate"), self.var_rate, -50, 50, "%"),
+                (t("audio.volume"), self.var_volume, -50, 50, "%"),
+                (t("audio.pitch"), self.var_pitch, -50, 50, "Hz"),
             ],
             start=1,
         ):
@@ -218,12 +234,12 @@ class TTSApp:
             )
         frm_voice.columnconfigure(3, weight=1)
 
-        frm_ch = ttk.LabelFrame(self.root, text="出力単位")
+        frm_ch = ttk.LabelFrame(self.root, text=t("units.group"))
         frm_ch.pack(fill="both", expand=True, **pad)
         self.tree = ttk.Treeview(frm_ch, columns=("no", "title", "chars"), show="headings", height=7)
         self.tree.heading("no", text="#")
-        self.tree.heading("title", text="タイトル")
-        self.tree.heading("chars", text="文字数")
+        self.tree.heading("title", text=t("units.title"))
+        self.tree.heading("chars", text=t("units.chars"))
         self.tree.column("no", width=40, anchor="center")
         self.tree.column("title", width=480)
         self.tree.column("chars", width=70, anchor="e")
@@ -234,16 +250,16 @@ class TTSApp:
 
         frm_run = ttk.Frame(self.root)
         frm_run.pack(fill="x", **pad)
-        self.btn_preview = ttk.Button(frm_run, text="音声確認", command=self.on_preview)
+        self.btn_preview = ttk.Button(frm_run, text=t("button.preview"), command=self.on_preview)
         self.btn_preview.pack(side="left", padx=6)
-        self.btn_generate = ttk.Button(frm_run, text="MP3生成 開始", command=self.on_generate)
+        self.btn_generate = ttk.Button(frm_run, text=t("button.generate"), command=self.on_generate)
         self.btn_generate.pack(side="left", padx=6)
-        self.btn_cancel = ttk.Button(frm_run, text="キャンセル", command=self.on_cancel, state="disabled")
+        self.btn_cancel = ttk.Button(frm_run, text=t("button.cancel"), command=self.on_cancel, state="disabled")
         self.btn_cancel.pack(side="left", padx=6)
 
         self.progress = ttk.Progressbar(self.root, mode="indeterminate")
         self.progress.pack(fill="x", **pad)
-        self.var_status = tk.StringVar(value="準備完了")
+        self.var_status = tk.StringVar(value=t("status.ready"))
         ttk.Label(self.root, textvariable=self.var_status, anchor="w").pack(fill="x", padx=10)
 
     def _current_provider_name(self) -> str:
@@ -252,6 +268,37 @@ class TTSApp:
             if lbl == label:
                 return name
         return "edge"
+
+    def _on_ui_language_changed(self, _event=None) -> None:
+        selected_name = self.var_ui_language.get()
+        language = next(
+            (code for code, name in LANGUAGE_NAMES.items() if name == selected_name),
+            "en",
+        )
+        if language == config.get_last("ui_language"):
+            return
+
+        provider_name = self._current_provider_name()
+        filepath = self.var_filepath.get()
+        outdir = self.var_outdir.get()
+        rate = self.var_rate.get()
+        volume = self.var_volume.get()
+        pitch = self.var_pitch.get()
+        config.set_last("ui_language", language)
+        set_language(language)
+        self.voice_request_id += 1
+        for child in self.root.winfo_children():
+            child.destroy()
+        self.root.title(t("app.title"))
+        self._build_widgets()
+        self.var_provider.set(self._name_to_label.get(provider_name, self._name_to_label["edge"]))
+        self.var_filepath.set(filepath)
+        self.var_outdir.set(outdir)
+        self.var_rate.set(rate)
+        self.var_volume.set(volume)
+        self.var_pitch.set(pitch)
+        self._refresh_output_list()
+        self.root.after(0, lambda: self._on_provider_changed(initial=True))
 
     def _current_provider(self):
         return get_provider(self._current_provider_name())
@@ -279,7 +326,7 @@ class TTSApp:
                 self.root.after(200, open_settings_then_load)
             else:
                 open_settings_then_load()
-            self.var_status.set(f"{provider.label}: 認証情報を設定してください")
+            self.var_status.set(t("provider.credentials_missing", provider=provider.label))
             return
         self._load_voices_async(provider)
 
@@ -322,7 +369,7 @@ class TTSApp:
                 ),
             )
 
-        self.var_status.set("ボイス一覧を取得中...")
+        self.var_status.set(t("provider.voices_loading"))
         threading.Thread(target=worker, daemon=True).start()
 
     def _voices_failed(self, err: Exception, provider, request_id: int) -> None:
@@ -330,7 +377,7 @@ class TTSApp:
             return
         if self._current_provider_name() != provider.name:
             return
-        self.var_status.set(f"{provider.label}: ボイス一覧の取得に失敗 ({err})")
+        self.var_status.set(t("provider.voices_failed", provider=provider.label, error=err))
 
     def _voices_loaded(self, voices: list[dict], provider, request_id: int) -> None:
         if request_id != self.voice_request_id:
@@ -344,7 +391,7 @@ class TTSApp:
         default = "ja-JP" if "ja-JP" in codes else ("en-US" if "en-US" in codes else "all")
         self.cmb_lang.set(default)
         self._update_voice_list()
-        self.var_status.set(f"{provider.label}: 準備完了（ボイス {len(voices)} 種）")
+        self.var_status.set(t("provider.ready", provider=provider.label, count=len(voices)))
 
     def _update_voice_list(self) -> None:
         filtered = voices_for_locale(self.voices, self.cmb_lang.get())
@@ -360,7 +407,7 @@ class TTSApp:
                 raise ValueError
         except ValueError:
             if show_warning:
-                messagebox.showwarning("確認", "文字数は1以上の整数で入力してください")
+                messagebox.showwarning(t("dialog.confirm"), t("status.invalid_chars"))
             return None
         return value
 
@@ -389,7 +436,7 @@ class TTSApp:
         self.tree.delete(*self.tree.get_children())
         output_chapters = self._output_chapters()
         if output_chapters is None:
-            self.var_status.set("文字数は1以上の整数で入力してください")
+            self.var_status.set(t("status.invalid_chars"))
             return
         for ch in output_chapters:
             self.tree.insert("", "end", values=(ch.index, ch.title, len(ch.text)))
@@ -400,16 +447,14 @@ class TTSApp:
             if self.var_split_mode.get() == "chapter"
             else sum(len(c.text) for c in output_chapters)
         )
-        unit_label = "チャプター" if self.var_split_mode.get() == "chapter" else "ファイル"
-        self.var_status.set(
-            f"{len(output_chapters)} {unit_label} / 合計 {total_chars:,} 文字"
-        )
+        unit_label = t("unit.chapters") if self.var_split_mode.get() == "chapter" else t("unit.files")
+        self.var_status.set(t("status.units", count=len(output_chapters), unit=unit_label, chars=total_chars))
 
     def on_browse_file(self) -> None:
         path = filedialog.askopenfilename(
             filetypes=[
-                ("対応ファイル", "*.txt *.epub"),
-                ("テキスト", "*.txt"),
+                (t("file.supported"), "*.txt *.epub"),
+                (t("file.text"), "*.txt"),
                 ("EPUB", "*.epub"),
             ]
         )
@@ -418,7 +463,7 @@ class TTSApp:
         try:
             chapters = load_chapters(path)
         except Exception as e:
-            messagebox.showerror("エラー", str(e))
+            messagebox.showerror(t("dialog.error"), str(e))
             return
         self.chapters = chapters
         self.var_filepath.set(path)
@@ -431,10 +476,10 @@ class TTSApp:
 
     def on_preview(self) -> None:
         if not self.chapters:
-            messagebox.showwarning("確認", "入力ファイルを選択してください")
+            messagebox.showwarning(t("dialog.confirm"), t("error.input_required"))
             return
         if not self.cmb_voice.get():
-            messagebox.showwarning("確認", "ボイスを選択してください")
+            messagebox.showwarning(t("dialog.confirm"), t("error.voice_required"))
             return
 
         output_chapters = self._output_chapters(show_warning=True)
@@ -451,7 +496,7 @@ class TTSApp:
             max_chars=preview_chars,
         )
         if not preview_text:
-            messagebox.showwarning("確認", "音声確認に使用できるテキストがありません")
+            messagebox.showwarning(t("dialog.confirm"), t("error.preview_text"))
             return
 
         voice = self.cmb_voice.get().split()[0]
@@ -463,20 +508,20 @@ class TTSApp:
             provider.validate_credentials()
         except ProviderError as e:
             self.on_open_settings()
-            messagebox.showwarning("確認", str(e))
+            messagebox.showwarning(t("dialog.confirm"), str(e))
             return
 
-        self._start_operation("音声確認を生成中...")
+        self._start_operation(t("preview.generating"))
 
         def done(path: str) -> None:
             def ui() -> None:
                 self._finish()
                 try:
                     self._play_audio(path)
-                    self.var_status.set("音声確認を再生しています")
+                    self.var_status.set(t("preview.playing"))
                 except OSError as e:
-                    self.var_status.set(f"再生エラー: {e}")
-                    messagebox.showerror("再生エラー", str(e))
+                    self.var_status.set(t("preview.play_error", error=e))
+                    messagebox.showerror(t("preview.play_error_title"), str(e))
 
             self.root.after(0, ui)
 
@@ -484,10 +529,10 @@ class TTSApp:
             def ui() -> None:
                 self._finish()
                 if isinstance(err, CancelledError):
-                    self.var_status.set("音声確認をキャンセルしました")
+                    self.var_status.set(t("preview.cancelled"))
                 else:
-                    self.var_status.set(f"音声確認エラー: {err}")
-                    messagebox.showerror("音声確認エラー", str(err))
+                    self.var_status.set(t("preview.error", error=err))
+                    messagebox.showerror(t("preview.error_title"), str(err))
 
             try:
                 os.remove(path)
@@ -525,10 +570,10 @@ class TTSApp:
 
     def on_generate(self) -> None:
         if not self.chapters:
-            messagebox.showwarning("確認", "入力ファイルを選択してください")
+            messagebox.showwarning(t("dialog.confirm"), t("error.input_required"))
             return
         if not self.cmb_voice.get():
-            messagebox.showwarning("確認", "ボイスを選択してください")
+            messagebox.showwarning(t("dialog.confirm"), t("error.voice_required"))
             return
         output_chapters = self._output_chapters(show_warning=True)
         if not output_chapters:
@@ -543,26 +588,26 @@ class TTSApp:
             provider.validate_credentials()
         except ProviderError as e:
             self.on_open_settings()
-            messagebox.showwarning("確認", str(e))
+            messagebox.showwarning(t("dialog.confirm"), str(e))
             return
 
         config.set_last("last_output_dir", out_dir)
         config.set_last("last_split_mode", self.var_split_mode.get())
         if self.var_split_mode.get() == "chars":
             config.set_last("last_split_chars", self._parse_split_chars())
-        self._start_operation("MP3生成を開始しています...")
+        self._start_operation(t("generate.starting"))
 
         def chapter_cb(i: int, total: int, title: str) -> None:
             def ui() -> None:
-                self.var_status.set(f"生成中 ({i}/{total}): {title}")
+                self.var_status.set(t("generate.progress", current=i, total=total, title=title))
 
             self.root.after(0, ui)
 
         def done(outputs: list[str]) -> None:
             def ui() -> None:
                 self._finish()
-                self.var_status.set(f"完了: {len(outputs)} ファイルを出力しました")
-                messagebox.showinfo("完了", f"{len(outputs)} 個のMP3を生成しました\n{out_dir}")
+                self.var_status.set(t("generate.done", count=len(outputs)))
+                messagebox.showinfo(t("dialog.complete"), t("generate.done_message", count=len(outputs), directory=out_dir))
 
             self.root.after(0, ui)
 
@@ -570,10 +615,10 @@ class TTSApp:
             def ui() -> None:
                 self._finish()
                 if isinstance(err, CancelledError):
-                    self.var_status.set("キャンセルされました")
+                    self.var_status.set(t("generate.cancelled"))
                 else:
-                    self.var_status.set(f"エラー: {err}")
-                    messagebox.showerror("エラー", str(err))
+                    self.var_status.set(t("generate.error", error=err))
+                    messagebox.showerror(t("dialog.error"), str(err))
 
             self.root.after(0, ui)
 
@@ -601,6 +646,7 @@ class TTSApp:
         self.btn_preview.config(state="disabled")
         self.btn_generate.config(state="disabled")
         self.btn_cancel.config(state="normal")
+        self.cmb_ui_language.config(state="disabled")
         self.progress.start(50)
         self.var_status.set(status)
 
@@ -609,10 +655,11 @@ class TTSApp:
         self.btn_preview.config(state="normal")
         self.btn_generate.config(state="normal")
         self.btn_cancel.config(state="disabled")
+        self.cmb_ui_language.config(state="readonly")
 
     def on_cancel(self) -> None:
         self.cancel_event.set()
-        self.var_status.set("キャンセル待ち...")
+        self.var_status.set(t("generate.cancelling"))
 
 
 def run_app() -> None:

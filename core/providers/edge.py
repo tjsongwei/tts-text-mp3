@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable
 
 import edge_tts
+from i18n import t
 
 from core.providers.base import (
     PROGRESS_INTERVAL,
@@ -15,7 +16,10 @@ from core.providers.base import (
 
 class EdgeTTSProvider(TTSProvider):
     name = "edge"
-    label = "Edge TTS (無料)"
+
+    @property
+    def label(self) -> str:
+        return t("provider.edge.label")
 
     def requires_credentials(self) -> dict[str, str]:
         return {}

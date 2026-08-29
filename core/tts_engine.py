@@ -4,6 +4,7 @@ import os
 import re
 from typing import Callable
 
+from i18n import t
 from core.file_reader import Chapter, sanitize_filename
 from core.providers import get_provider
 from core.providers.base import CancelledError, TTSProvider  # noqa: F401
@@ -59,7 +60,7 @@ def generate_chapters(
     total = len(chapters)
     for i, ch in enumerate(chapters):
         if cancel_event is not None and cancel_event.is_set():
-            raise CancelledError("キャンセルされました")
+            raise CancelledError(t("error.cancelled"))
         fname = f"{ch.index:03d}_{sanitize_filename(ch.title)}.mp3"
         out_path = os.path.join(output_dir, fname)
         if chapter_cb is not None:

@@ -1,86 +1,93 @@
+[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
+
 # TTS Text to MP3
 
-TXTまたはEPUBファイルを読み込み、文章を章ごとのMP3音声へ変換するデスクトップアプリです。WindowsとmacOSに対応しています。
+A desktop application that converts text from TXT or EPUB files into MP3 audio. It supports Windows and macOS.
 
-## 主な機能
+## Features
 
-- TXT / EPUBからのテキスト抽出
-- EPUBの章ごとのMP3出力
-- 指定文字数ごとのMP3出力
-- 言語・ボイスの選択
-- ファイル先頭の一文を使った音声確認
-- 読み上げ速度、音量、ピッチの調整
-- 長文の自動分割
-- バックグラウンド生成とキャンセル
+- Extract text from TXT and EPUB files
+- Generate MP3 files by EPUB chapter
+- Generate MP3 files by a specified character count
+- Select language and voice
+- Generate an audio preview from the selected output unit
+- Adjust speaking speed, volume, and pitch
+- Automatically split long text
+- Generate audio in the background with cancellation support
+- Switch the UI between Japanese, English, and Simplified Chinese
 
-## 対応プロバイダ
+## Supported Providers
 
-| プロバイダ | 認証情報 |
+| Provider | Credentials |
 | --- | --- |
-| Edge TTS | 不要 |
-| Microsoft Azure Speech | APIキーとリージョンが必要 |
-| Google Cloud Text-to-Speech | APIキーまたはサービスアカウントJSONが必要 |
-| OpenAI TTS | APIキーが必要 |
+| Edge TTS | Not required |
+| Microsoft Azure Speech | API key and region |
+| Google Cloud Text-to-Speech | API key or service account JSON |
+| OpenAI TTS | API key |
 
-## ダウンロード
+## Download
 
-[最新のGitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest)から、お使いのOSに合ったファイルをダウンロードしてください。
+Download the appropriate file for your operating system from the [latest GitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest).
 
 ### Windows
 
-| ファイル | 用途 |
+| File | Purpose |
 | --- | --- |
-| `TTS-Text-MP3_Setup_<version>.exe` | 通常のインストール版。スタートメニューへの登録とアンインストールに対応 |
-| `TTS-Text-MP3_Windows_Portable_<version>.zip` | インストール不要版。ZIPを展開して `TTS-Text-MP3.exe` を実行 |
+| `TTS-Text-MP3_Setup_<version>.exe` | Standard installer with Start menu registration and uninstall support |
+| `TTS-Text-MP3_Windows_Portable_<version>.zip` | Portable version; extract the ZIP and run `TTS-Text-MP3.exe` |
 
-通常はSetup版がおすすめです。Portable版を使う場合は、ZIP内から直接起動せず、最初に任意のフォルダへすべて展開してください。
+The Setup version is recommended. For the Portable version, extract the entire ZIP to a folder before launching the application.
 
 ### macOS
 
-Macの種類に合ったDMGまたはZIPを選んでください。
+Choose the DMG or ZIP that matches your Mac.
 
-| ファイル名に含まれる表記 | 対象Mac |
+| Filename contains | Target Mac |
 | --- | --- |
-| `arm64` | Apple Silicon搭載Mac（M1、M2、M3、M4以降） |
-| `x86_64` | Intel搭載Mac |
+| `arm64` | Apple Silicon Mac (M1, M2, M3, M4, or later) |
+| `x86_64` | Intel Mac |
 
-- DMG：開いてアプリを利用する配布形式
-- ZIP：展開して `.app` を利用する形式
+- DMG: Open the disk image to use the application
+- ZIP: Extract the archive and use the `.app`
 
-現在のmacOS版はAppleによるコード署名・公証を行っていません。初回起動時にmacOSの警告が表示された場合は、FinderでアプリをControlキーを押しながらクリックし、「開く」を選択してください。
+The current macOS build is not code-signed or notarized by Apple. If macOS displays a warning on first launch, Control-click the application in Finder and select **Open**.
 
-## 基本的な使い方
+## Basic Usage
 
-1. 使用するTTSプロバイダを選択します。
-2. 必要な場合は「設定...」から認証情報を入力します。
-3. TXTまたはEPUBファイルを選択します。
-4. 出力フォルダ、言語、ボイス、速度などを設定します。
-5. 必要に応じて「音声確認」を実行します。
-6. 「MP3生成 開始」を押します。
+1. Select a TTS provider.
+2. If required, enter credentials under **Settings...**.
+3. Select a TXT or EPUB file.
+4. Configure the output folder, language, voice, speed, and other options.
+5. Use **Preview Audio** if needed.
+6. Click **Generate MP3**.
 
-### MP3の分割方法
+### MP3 Splitting
 
-- 「章ごと」は、従来どおりEPUBのチャプターごとにMP3を生成します。
-- 「文字数ごと」は、TXTまたはEPUBの本文全体を指定文字数以内に分割し、`Part 001`からの連番MP3を生成します。初期値は5000文字です。
-- 文字数は読み込み後の本文で数え、空白と改行も1文字とします。指定文字数以内の最後の句点または改行を優先し、区切りがない長文は指定文字数で分割します。
-- 選択した分割方法と文字数は、次回起動時に復元されます。
+- **By chapter** generates one MP3 for each EPUB chapter.
+- **By character count** joins the TXT or EPUB body and splits it into sequential MP3 files named from `Part 001`. The default maximum is 5,000 characters.
+- Character counts are based on the processed text; spaces and line breaks each count as one character. The last sentence ending or line break within the limit is preferred. Text without a suitable boundary is split at the limit.
+- The selected splitting method and character count are restored the next time the application starts.
 
-「音声確認」は、出力単位の一覧で選択中の部分から約15秒分のサンプルを生成します。一覧で何も選択していない場合は、最初の出力単位を使用します。実際の長さは言語、ボイス、読み上げ速度によって前後します。
+**Preview Audio** creates an approximately 15-second sample from the selected output unit. If no unit is selected, the first one is used. The actual duration varies by language, voice, and speaking speed.
 
-Edge TTSは認証情報なしですぐに使用できます。
+Edge TTS can be used immediately without credentials.
 
-## 認証情報と設定ファイル
+### Display Language
 
-Azure、Google、OpenAIの認証情報はGUIの「設定...」から入力します。設定は次の場所に平文で保存されます。
+Use **Display language** at the top of the window to switch between Japanese, English, and Simplified Chinese. On first launch, the application uses the operating system language and falls back to English for unsupported languages. Your selection is saved for future launches.
 
-- Windows：`%USERPROFILE%\.tts-text-mp3\config.json`
-- macOS：`~/.tts-text-mp3/config.json`
+## Credentials and Configuration
 
-APIキー、`config.json`、GoogleのサービスアカウントJSONをGitへコミットしたり、他人と共有したりしないでください。これらの認証情報は配布ファイルやGitHub Releaseには含まれていません。
+Enter Azure, Google, and OpenAI credentials under **Settings...**. They are stored as plain text in the following location:
 
-## ソースコードから実行する
+- Windows: `%USERPROFILE%\.tts-text-mp3\config.json`
+- macOS: `~/.tts-text-mp3/config.json`
 
-Python 3.10以降を使用してください。
+Do not commit or share API keys, `config.json`, or Google service account JSON files. Credentials are not included in distributed packages or GitHub Releases.
+
+## Run from Source
+
+Use Python 3.10 or later.
 
 ### Windows
 
@@ -102,55 +109,55 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-## 配布ファイルをローカルでビルドする
+## Build Distribution Packages Locally
 
 ### Windows
 
-PowerShell、PyInstaller、Inno Setup 6が必要です。
+PowerShell, PyInstaller, and Inno Setup 6 are required.
 
 ```powershell
 python -m pip install -r requirements.txt pyinstaller
 .\scripts\build_windows.ps1 -Version "dev"
 ```
 
-`release/` にSetup.exeとPortable ZIPが作成されます。
+The Setup executable and Portable ZIP are created under `release/`.
 
 ### macOS
 
-macOS上で実行してください。
+Run this on macOS.
 
 ```bash
 python -m pip install -r requirements.txt pyinstaller
 bash scripts/build_macos.sh dev
 ```
 
-実行したMacのアーキテクチャ向けに、`.app`のZIPとDMGが `release/` に作成されます。
+The `.app` ZIP and DMG for the current Mac architecture are created under `release/`.
 
-## GitHub Releaseを作成する
+## Create a GitHub Release
 
-`v`で始まるタグをpushすると、GitHub Actionsが以下を自動的にビルドしてReleaseへ添付します。
+Pushing a tag that begins with `v` makes GitHub Actions build and attach the following files to a Release:
 
-- Windows Setup版
-- Windows Portable版
-- macOS Apple Silicon版（DMG / ZIP）
-- macOS Intel版（DMG / ZIP）
+- Windows Setup
+- Windows Portable
+- macOS Apple Silicon (DMG / ZIP)
+- macOS Intel (DMG / ZIP)
 
 ```bash
 git tag v0.2.0
 git push origin v0.2.0
 ```
 
-ワークフローは `.github/workflows/release.yml` にあります。認証情報は登録せず、Release作成にはGitHub Actions標準の `GITHUB_TOKEN` と `contents: write` 権限だけを使用します。
+The workflow is located at `.github/workflows/release.yml`. It does not store provider credentials and uses only the standard GitHub Actions `GITHUB_TOKEN` with `contents: write` permission to create the Release.
 
-## 現在の制限事項
+## Current Limitations
 
-- macOS版は未署名・未公証です。
-- Windows版もコード署名していないため、環境によってはSmartScreenの警告が表示される場合があります。
-- TTSプロバイダの利用料金、文字数制限、地域制限は各サービスの条件に従います。
-- macOS版のアプリアイコンは現在未設定です。
+- The macOS build is not signed or notarized.
+- The Windows build is not code-signed, so SmartScreen may display a warning.
+- Provider pricing, character limits, and regional restrictions are governed by each service.
+- The macOS application icon is not currently configured.
 
-## ライセンス
+## License
 
-このプロジェクトは [MIT License](LICENSE) のもとで公開されています。
+This project is released under the [MIT License](LICENSE).
 
 Copyright (c) 2026 YuluEthan

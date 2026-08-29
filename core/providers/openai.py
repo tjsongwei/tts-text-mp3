@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Callable
 
+from i18n import t
 from core.config import get_provider_credentials
 from core.providers.base import (
     PROGRESS_INTERVAL,
@@ -33,17 +34,15 @@ class OpenAITTSProvider(TTSProvider):
     label = "OpenAI TTS"
 
     def requires_credentials(self) -> dict[str, str]:
-        return {"api_key": "OpenAI APIキー"}
+        return {"api_key": t("provider.openai.api_key")}
 
     def optional_credentials(self) -> dict[str, str]:
-        return {"model": "モデル (既定: tts-1)"}
+        return {"model": t("provider.openai.model")}
 
     def validate_credentials(self) -> None:
         creds = get_provider_credentials(self.name)
         if not creds.get("api_key", "").strip():
-            raise ProviderError(
-                "OpenAIのAPIキーが未設定です（設定ダイアログで入力してください）"
-            )
+            raise ProviderError(t("provider.openai.credentials"))
 
     def _client(self):
         from openai import OpenAI
@@ -51,9 +50,7 @@ class OpenAITTSProvider(TTSProvider):
         creds = get_provider_credentials(self.name)
         api_key = creds.get("api_key", "").strip()
         if not api_key:
-            raise ProviderError(
-                "OpenAIのAPIキーが未設定です（設定ダイアログで入力してください）"
-            )
+            raise ProviderError(t("provider.openai.credentials"))
         return OpenAI(api_key=api_key), creds.get("model", "tts-1").strip() or "tts-1"
 
     def list_voices(self) -> list[dict]:
@@ -98,6 +95,6 @@ class OpenAITTSProvider(TTSProvider):
                                 progress_cb(written)
                                 next_report = written + PROGRESS_INTERVAL
                 except Exception as e:
-                    raise ProviderError(f"OpenAI TTSでエラー: {e}") from e
+                    raise ProviderError(t("provider.operation_error", provider="OpenAI TTS", error=e)) from e
         if progress_cb is not None:
             progress_cb(written)
