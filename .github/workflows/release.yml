@@ -56,8 +56,34 @@ jobs:
           name: macos-${{ matrix.arch }}-release
           path: release/*
 
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Analyze and test mobile app
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Build Android APK
+        working-directory: mobile
+        run: flutter build apk --release
+      - name: Prepare Android release asset
+        run: |
+          mkdir -p release
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk "release/TTS-Text-MP3-${{ github.ref_name }}-Android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: release/*-Android.apk
+
   publish:
-    needs: [windows, macos]
+    needs: [windows, macos, android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
