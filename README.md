@@ -2,6 +2,8 @@
 
 # TTS Text to MP3
 
+The Android/iOS Flutter client is maintained as a separate project in [`mobile/`](mobile/README.md). Mobile provider support differs where client-side credential security or SDK availability requires it.
+
 A desktop application that converts text from TXT or EPUB files into MP3 audio. It supports Windows and macOS.
 
 ## Features
