@@ -96,6 +96,8 @@ class TTSApp:
         self.voice_cache: dict[str, list[dict]] = {}
         self.voice_request_id = 0
         self.cancel_event = threading.Event()
+        self._output_signature: tuple[tuple[int, str, str], ...] = ()
+        self._checked_output_rows: set[int] = set()
 
         self._build_widgets()
 
@@ -236,15 +238,23 @@ class TTSApp:
 
         frm_ch = ttk.LabelFrame(self.root, text=t("units.group"))
         frm_ch.pack(fill="both", expand=True, **pad)
-        self.tree = ttk.Treeview(frm_ch, columns=("no", "title", "chars"), show="headings", height=7)
+        frm_ch_actions = ttk.Frame(frm_ch)
+        frm_ch_actions.pack(fill="x", padx=6, pady=(6, 0))
+        ttk.Button(frm_ch_actions, text=t("button.check_all"), command=self._check_all_output_rows).pack(side="left")
+        ttk.Button(frm_ch_actions, text=t("button.uncheck_all"), command=self._uncheck_all_output_rows).pack(side="left", padx=(6, 0))
+        self.tree = ttk.Treeview(frm_ch, columns=("checked", "no", "title", "chars"), show="headings", height=7)
+        self.tree.heading("checked", text="")
         self.tree.heading("no", text="#")
         self.tree.heading("title", text=t("units.title"))
         self.tree.heading("chars", text=t("units.chars"))
+        self.tree.column("checked", width=36, minwidth=36, stretch=False, anchor="center")
         self.tree.column("no", width=40, anchor="center")
         self.tree.column("title", width=480)
         self.tree.column("chars", width=70, anchor="e")
         sb = ttk.Scrollbar(frm_ch, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
+        self.tree.bind("<Button-1>", self._on_output_tree_click)
+        self.tree.bind("<space>", self._on_output_tree_space)
         self.tree.pack(side="left", fill="both", expand=True, padx=(6, 0), pady=6)
         sb.pack(side="right", fill="y", pady=6, padx=(0, 6))
 
@@ -438,8 +448,13 @@ class TTSApp:
         if output_chapters is None:
             self.var_status.set(t("status.invalid_chars"))
             return
-        for ch in output_chapters:
-            self.tree.insert("", "end", values=(ch.index, ch.title, len(ch.text)))
+        signature = tuple((ch.index, ch.title, ch.text) for ch in output_chapters)
+        if signature != self._output_signature:
+            self._output_signature = signature
+            self._checked_output_rows = set(range(len(output_chapters)))
+        for row, ch in enumerate(output_chapters):
+            checked = "☑" if row in self._checked_output_rows else "☐"
+            self.tree.insert("", "end", iid=str(row), values=(checked, ch.index, ch.title, len(ch.text)))
         if not self.chapters:
             return
         total_chars = (
@@ -449,6 +464,59 @@ class TTSApp:
         )
         unit_label = t("unit.chapters") if self.var_split_mode.get() == "chapter" else t("unit.files")
         self.var_status.set(t("status.units", count=len(output_chapters), unit=unit_label, chars=total_chars))
+
+    def _toggle_output_row(self, row: int) -> None:
+        if str(self.btn_generate.cget("state")) == "disabled":
+            return
+        if row in self._checked_output_rows:
+            self._checked_output_rows.remove(row)
+        else:
+            self._checked_output_rows.add(row)
+        item = str(row)
+        if self.tree.exists(item):
+            values = list(self.tree.item(item, "values"))
+            values[0] = "☑" if row in self._checked_output_rows else "☐"
+            self.tree.item(item, values=values)
+
+    def _set_all_output_rows_checked(self, checked: bool) -> None:
+        if str(self.btn_generate.cget("state")) == "disabled":
+            return
+        rows = range(len(self._output_signature))
+        self._checked_output_rows = set(rows) if checked else set()
+        for row in rows:
+            item = str(row)
+            if self.tree.exists(item):
+                values = list(self.tree.item(item, "values"))
+                values[0] = "☑" if checked else "☐"
+                self.tree.item(item, values=values)
+
+    def _check_all_output_rows(self) -> None:
+        self._set_all_output_rows_checked(True)
+
+    def _uncheck_all_output_rows(self) -> None:
+        self._set_all_output_rows_checked(False)
+
+    def _on_output_tree_click(self, event) -> None:
+        if self.tree.identify_region(event.x, event.y) != "cell":
+            return
+        if self.tree.identify_column(event.x) != "#1":
+            return
+        item = self.tree.identify_row(event.y)
+        if item:
+            self._toggle_output_row(int(item))
+
+    def _on_output_tree_space(self, _event) -> str:
+        for item in self.tree.selection():
+            self._toggle_output_row(int(item))
+        return "break"
+
+    def _mark_output_row_completed(self, row: int) -> None:
+        self._checked_output_rows.discard(row)
+        item = str(row)
+        if self.tree.exists(item):
+            values = list(self.tree.item(item, "values"))
+            values[0] = "☐"
+            self.tree.item(item, values=values)
 
     def on_browse_file(self) -> None:
         path = filedialog.askopenfilename(
@@ -466,6 +534,7 @@ class TTSApp:
             messagebox.showerror(t("dialog.error"), str(e))
             return
         self.chapters = chapters
+        self._output_signature = ()
         self.var_filepath.set(path)
         self._refresh_output_list()
 
@@ -578,6 +647,11 @@ class TTSApp:
         output_chapters = self._output_chapters(show_warning=True)
         if not output_chapters:
             return
+        selected_rows = sorted(self._checked_output_rows)
+        selected_units = [output_chapters[row] for row in selected_rows if row < len(output_chapters)]
+        if not selected_units:
+            messagebox.showwarning(t("dialog.confirm"), t("error.no_units_checked"))
+            return
         voice = self.cmb_voice.get().split()[0]
         out_dir = self.var_outdir.get().strip() or "."
         rate = f"{int(self.var_rate.get()):+d}%"
@@ -603,6 +677,10 @@ class TTSApp:
 
             self.root.after(0, ui)
 
+        def completed_cb(i: int, total: int, _chapter: Chapter, _path: str) -> None:
+            row = selected_rows[i - 1]
+            self.root.after(0, lambda r=row: self._mark_output_row_completed(r))
+
         def done(outputs: list[str]) -> None:
             def ui() -> None:
                 self._finish()
@@ -626,13 +704,14 @@ class TTSApp:
             try:
                 outputs = generate_chapters(
                     provider,
-                    output_chapters,
+                    selected_units,
                     voice,
                     out_dir,
                     rate=rate,
                     volume=volume,
                     pitch=pitch,
                     chapter_cb=chapter_cb,
+                    completed_cb=completed_cb,
                     cancel_event=self.cancel_event,
                 )
                 done(outputs)

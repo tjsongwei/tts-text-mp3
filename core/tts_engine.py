@@ -52,6 +52,7 @@ def generate_chapters(
     volume: str = "+0%",
     pitch: str = "+0Hz",
     chapter_cb: Callable[[int, int, str], None] | None = None,
+    completed_cb: Callable[[int, int, Chapter, str], None] | None = None,
     progress_cb: Callable[[int], None] | None = None,
     cancel_event=None,
 ) -> list[str]:
@@ -76,4 +77,6 @@ def generate_chapters(
             cancel_event=cancel_event,
         )
         outputs.append(out_path)
+        if completed_cb is not None:
+            completed_cb(i + 1, total, ch, out_path)
     return outputs
