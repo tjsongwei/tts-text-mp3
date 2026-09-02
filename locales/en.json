@@ -30,7 +30,7 @@
   "units.group": "Output units",
   "units.title": "Title",
   "units.chars": "Characters",
-  "button.preview": "Preview Audio",
+  "button.preview": "Preview Audio (~15 sec)",
   "button.generate": "Generate MP3",
   "button.cancel": "Cancel",
   "button.save": "Save",

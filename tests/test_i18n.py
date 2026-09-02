@@ -24,7 +24,11 @@ class I18nTests(unittest.TestCase):
                 self.assertEqual(expected, set(catalog))
 
     def test_each_language_translates_a_ui_label(self):
-        expected = {"ja": "音声確認", "en": "Preview Audio", "zh-CN": "试听"}
+        expected = {
+            "ja": "音声確認（約15秒）",
+            "en": "Preview Audio (~15 sec)",
+            "zh-CN": "试听（约15秒）",
+        }
 
         for language, label in expected.items():
             with self.subTest(language=language):

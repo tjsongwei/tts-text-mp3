@@ -30,7 +30,7 @@
   "units.group": "出力単位",
   "units.title": "タイトル",
   "units.chars": "文字数",
-  "button.preview": "音声確認",
+  "button.preview": "音声確認（約15秒）",
   "button.generate": "MP3生成 開始",
   "button.cancel": "キャンセル",
   "button.save": "保存",

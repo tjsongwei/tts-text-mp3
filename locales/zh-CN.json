@@ -30,7 +30,7 @@
   "units.group": "输出单元",
   "units.title": "标题",
   "units.chars": "字符数",
-  "button.preview": "试听",
+  "button.preview": "试听（约15秒）",
   "button.generate": "开始生成 MP3",
   "button.cancel": "取消",
   "button.save": "保存",
