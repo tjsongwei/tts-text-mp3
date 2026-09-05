@@ -66,26 +66,10 @@ def _html_to_text(html_content: bytes | str) -> str:
 
 
 def read_epub_file(path: str) -> list[Chapter]:
-    from ebooklib import epub, ITEM_DOCUMENT
+    from core.epub_reader import read_epub_sections
 
-    book = epub.read_epub(path)
-    chapters: list[Chapter] = []
-    idx = 0
-    spine_ids = [item_id for item_id, _linear in book.spine]
-    for item_id in spine_ids:
-        item = book.get_item_with_id(item_id)
-        if item is None or item.get_type() != ITEM_DOCUMENT:
-            continue
-        text = _html_to_text(item.get_content())
-        if len(text.strip()) < 50:
-            continue
-        idx += 1
-        title = getattr(item, "title", None)
-        if not title:
-            first_line = text.split("\n", 1)[0].strip()
-            title = first_line if 0 < len(first_line) <= 80 else f"Chapter {idx}"
-        chapters.append(Chapter(index=idx, title=title, text=text))
-    return chapters
+    return [Chapter(index=i, title=title, text=text)
+            for i, (title, text) in enumerate(read_epub_sections(path), 1)]
 
 
 def load_chapters(path: str) -> list[Chapter]:

@@ -65,7 +65,8 @@ The current macOS build is not code-signed or notarized by Apple. If macOS displ
 
 ### MP3 Splitting
 
-- **By chapter** generates one MP3 for each EPUB chapter.
+- **By chapter** uses the top-level EPUB table of contents on desktop and mobile. Separate chapter title and body files are joined, and nested sections stay in their parent chapter.
+- Front matter and identifiable end matter (such as notes or a colophon) remain separate selectable items. All items start checked; uncheck any you do not want to read. Unidentified continuation text stays in its chapter. Broken links do not invalidate other chapter boundaries. A missing anchor uses the start of its file only when that file has no valid chapter start. If no navigation targets are usable, text is retained by internal file.
 - **By character count** joins the TXT or EPUB body and splits it into sequential MP3 files named from `Part 001`. The default maximum is 5,000 characters.
 - Character counts are based on the processed text; spaces and line breaks each count as one character. The last sentence ending or line break within the limit is preferred. Text without a suitable boundary is split at the limit.
 - The selected splitting method and character count are restored the next time the application starts.
