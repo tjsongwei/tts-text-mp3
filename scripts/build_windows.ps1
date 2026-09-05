@@ -5,14 +5,14 @@ $ErrorActionPreference = "Stop"
 $env:APP_VERSION = $Version
 
 python -m PyInstaller --noconfirm --clean packaging/tts_text_mp3.spec
-if (-not (Test-Path "dist\TTS-Text-MP3\TTS-Text-MP3.exe")) {
+if (-not (Test-Path "dist\YomiPalette\YomiPalette.exe")) {
     throw "PyInstaller output was not created."
 }
 
 New-Item -ItemType Directory -Force -Path release | Out-Null
-$portable = "release\TTS-Text-MP3_Windows_Portable_$Version.zip"
+$portable = "release\YomiPalette_Windows_Portable_$Version.zip"
 if (Test-Path $portable) { Remove-Item -Force $portable }
-Compress-Archive -Path "dist\TTS-Text-MP3\*" -DestinationPath $portable
+Compress-Archive -Path "dist\YomiPalette\*" -DestinationPath $portable
 
 $iscc = Get-Command iscc -ErrorAction SilentlyContinue
 if ($iscc) {

@@ -1,6 +1,8 @@
 [English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
-# TTS Text to MP3
+# YomiPalette
+
+用喜欢的声音，把电子书变成有声书。
 
 Android/iOS Flutter客户端作为独立项目保存在[`mobile/`](mobile/README.zh-CN.md)。由于客户端凭据安全和SDK可用性的差异，移动版支持的提供商范围有所不同。
 
@@ -29,14 +31,16 @@ Android/iOS Flutter客户端作为独立项目保存在[`mobile/`](mobile/README
 
 ## 下载
 
-请从[最新的 GitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest)下载适合您操作系统的文件。
+请从[最新的 GitHub Release](https://github.com/tjsongwei/yomipalette/releases/latest)下载适合您操作系统的文件。
+
+已发布的 v0.1.7 及更早版本仍使用旧名称 `TTS-Text-MP3` 的文件名和应用名称。下方的 `YomiPalette` 文件名适用于今后的版本。
 
 ### Windows
 
 | 文件 | 用途 |
 | --- | --- |
-| `TTS-Text-MP3_Setup_<version>.exe` | 标准安装版，支持开始菜单快捷方式和卸载 |
-| `TTS-Text-MP3_Windows_Portable_<version>.zip` | 免安装版；解压 ZIP 后运行 `TTS-Text-MP3.exe` |
+| `YomiPalette_Setup_<version>.exe` | 标准安装版，支持开始菜单快捷方式和卸载 |
+| `YomiPalette_Windows_Portable_<version>.zip` | 免安装版；解压 ZIP 后运行 `YomiPalette.exe` |
 
 建议使用 Setup 版。使用 Portable 版时，请先将整个 ZIP 解压到文件夹，再启动应用。
 
@@ -159,3 +163,9 @@ git push origin v0.2.0
 本项目根据 [MIT License](LICENSE) 发布。
 
 Copyright (c) 2026 YuluEthan
+
+## 支持 YomiPalette 开发
+
+如果 YomiPalette 对您有帮助，欢迎支持项目的持续开发。您的支持将用于功能改进、问题修复以及 Windows 和 Android 的兼容性测试。支持完全自愿，不影响您可以使用的应用功能。
+
+[通过 GitHub Sponsors 支持开发](https://github.com/sponsors/tjsongwei)

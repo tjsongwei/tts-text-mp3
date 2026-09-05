@@ -1,6 +1,8 @@
 [English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
-# TTS Text to MP3
+# YomiPalette
+
+Turn your digital books into audio, with your choice of voice.
 
 The Android/iOS Flutter client is maintained as a separate project in [`mobile/`](mobile/README.md). Mobile provider support differs where client-side credential security or SDK availability requires it.
 
@@ -29,14 +31,16 @@ A desktop application that converts text from TXT or EPUB files into MP3 audio. 
 
 ## Download
 
-Download the appropriate file for your operating system from the [latest GitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest).
+Download the appropriate file for your operating system from the [latest GitHub Release](https://github.com/tjsongwei/yomipalette/releases/latest).
+
+Existing releases through v0.1.7 still use the `TTS-Text-MP3` filenames and app name. The `YomiPalette` filenames below apply to future releases.
 
 ### Windows
 
 | File | Purpose |
 | --- | --- |
-| `TTS-Text-MP3_Setup_<version>.exe` | Standard installer with Start menu registration and uninstall support |
-| `TTS-Text-MP3_Windows_Portable_<version>.zip` | Portable version; extract the ZIP and run `TTS-Text-MP3.exe` |
+| `YomiPalette_Setup_<version>.exe` | Standard installer with Start menu registration and uninstall support |
+| `YomiPalette_Windows_Portable_<version>.zip` | Portable version; extract the ZIP and run `YomiPalette.exe` |
 
 The Setup version is recommended. For the Portable version, extract the entire ZIP to a folder before launching the application.
 
@@ -164,3 +168,9 @@ The workflow is located at `.github/workflows/release.yml`. It does not store pr
 This project is released under the [MIT License](LICENSE).
 
 Copyright (c) 2026 YuluEthan
+
+## Support YomiPalette
+
+If YomiPalette is useful to you, consider supporting its continued development. Your support helps improve features, fix bugs, and test Windows and Android compatibility. Support is optional and does not change which app features you can use.
+
+[Support development](https://github.com/sponsors/tjsongwei)

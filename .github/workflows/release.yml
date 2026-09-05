@@ -76,7 +76,7 @@ jobs:
       - name: Prepare Android release asset
         run: |
           mkdir -p release
-          cp mobile/build/app/outputs/flutter-apk/app-release.apk "release/TTS-Text-MP3-${{ github.ref_name }}-Android.apk"
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk "release/YomiPalette-${{ github.ref_name }}-Android.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: android-release
@@ -96,5 +96,5 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" release-assets/* \
             --repo "${{ github.repository }}" \
-            --title "TTS Text to MP3 ${{ github.ref_name }}" \
+            --title "YomiPalette ${{ github.ref_name }}" \
             --generate-notes

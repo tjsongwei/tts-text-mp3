@@ -1,4 +1,4 @@
-# PyInstaller spec for TTS Text to MP3.
+# PyInstaller spec for YomiPalette.
 # Provider SDKs are imported lazily by the application, so the base bundle can
 # stay small while still allowing all providers to be selected at runtime.
 
@@ -53,7 +53,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="TTS-Text-MP3",
+    name="YomiPalette",
     icon=icon_path if sys.platform == "win32" else None,
     debug=False,
     bootloader_ignore_signals=False,
@@ -68,13 +68,13 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name="TTS-Text-MP3",
+    name="YomiPalette",
 )
 
 if sys.platform == "darwin":
     app = BUNDLE(
         coll,
-        name="TTS-Text-MP3.app",
+        name="YomiPalette.app",
         icon=None,
         bundle_identifier="com.ttstextmp3.app",
     )

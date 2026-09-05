@@ -1,4 +1,4 @@
-"""TTS Text → MP3 アプリのエントリポイント"""
+"""YomiPalette アプリのエントリポイント"""
 
 from gui.app import run_app
 

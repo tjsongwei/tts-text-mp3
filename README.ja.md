@@ -1,6 +1,8 @@
 [English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
-# TTS Text to MP3
+# YomiPalette
+
+電子書籍を、好きな声で。
 
 TXTまたはEPUBファイルを読み込み、文章をMP3音声へ変換するデスクトップアプリです。WindowsとmacOSに対応しています。
 
@@ -29,14 +31,16 @@ Android・iOS向けのモバイル版は、同一リポジトリ内の別プロ�
 
 ## ダウンロード
 
-[最新のGitHub Release](https://github.com/tjsongwei/tts-text-mp3/releases/latest)から、お使いのOSに合ったファイルをダウンロードしてください。
+[最新のGitHub Release](https://github.com/tjsongwei/yomipalette/releases/latest)から、お使いのOSに合ったファイルをダウンロードしてください。
+
+v0.1.7までの公開済み配布物は、旧名称 `TTS-Text-MP3` のファイル名・アプリ名のままです。下記の `YomiPalette` のファイル名は今後のリリースから適用します。
 
 ### Windows
 
 | ファイル | 用途 |
 | --- | --- |
-| `TTS-Text-MP3_Setup_<version>.exe` | 通常のインストール版。スタートメニューへの登録とアンインストールに対応 |
-| `TTS-Text-MP3_Windows_Portable_<version>.zip` | インストール不要版。ZIPを展開して `TTS-Text-MP3.exe` を実行 |
+| `YomiPalette_Setup_<version>.exe` | 通常のインストール版。スタートメニューへの登録とアンインストールに対応 |
+| `YomiPalette_Windows_Portable_<version>.zip` | インストール不要版。ZIPを展開して `YomiPalette.exe` を実行 |
 
 通常はSetup版がおすすめです。Portable版を使う場合は、ZIP内から直接起動せず、最初に任意のフォルダへすべて展開してください。
 
@@ -159,3 +163,9 @@ git push origin v0.2.0
 このプロジェクトは [MIT License](LICENSE) のもとで公開されています。
 
 Copyright (c) 2026 YuluEthan
+
+## YomiPaletteの開発を応援する
+
+YomiPaletteが役に立ったら、開発の継続を応援していただけるとうれしいです。いただいた支援は、機能改善・不具合修正・Windows／Androidでの動作検証に役立てます。支援は任意で、支援の有無によって利用できる機能は変わりません。
+
+[GitHub Sponsorsで開発を応援する](https://github.com/sponsors/tjsongwei)
